@@ -1,21 +1,29 @@
 package OpenLRImpl;
 
+import DataBase.DatasourceConfig;
 import GeometryFunctions.*;
-import Loader.MapLoader;
 import openlr.map.Line;
 import openlr.map.MapDatabase;
 import openlr.map.Node;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.operation.distance.DistanceOp;
 
 import java.awt.geom.Rectangle2D;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.jooq.sources.tables.Kanten.KANTEN;
+import static org.jooq.sources.tables.Knoten.KNOTEN;
 
 /**
  * Implementation of the TomTom OpenLR MapDatabase interface.
@@ -24,14 +32,17 @@ import java.util.stream.Collectors;
  */
 
 public class MapDatabaseImpl implements MapDatabase {
-
-    private final MapLoader osmLoader;
-
+    private final DSLContext ctx;
+    private final Connection con;
     GeometryFactory geometryFactory = new GeometryFactory();
 
-    public MapDatabaseImpl(MapLoader osmLoader) {
-        this.osmLoader = osmLoader;
-        osmLoader.setMdb(this);
+    public MapDatabaseImpl() {
+        try {
+            this.con = DatasourceConfig.getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        this.ctx = DSL.using(con, SQLDialect.POSTGRES);
     }
 
     @Override
@@ -40,80 +51,11 @@ public class MapDatabaseImpl implements MapDatabase {
     }
 
     @Override
-    public Line getLine(long id) {
-
-         Optional<LineImpl> matchingLine = osmLoader.getAllLinesList().stream()
-                 .filter(l -> l.getID() == id).findFirst();
-         return matchingLine.get();
-
-    }
-
-    @Override
     public Node getNode(long id) {
 
-        Optional<NodeImpl> matchingNode = osmLoader.getAllNodesList().stream()
-            .filter(n -> n.getID() == id).findFirst();
+        NodeImpl Node = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
+                .from(KNOTEN).where(KNOTEN.NODE_ID.eq(id).fetchInto(NodeImpl.class);
 
         return matchingNode.get();
-    }
-
-    @Override
-    public Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude, int distance) {
-
-        double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
-        Point p = geometryFactory.createPoint(new Coordinate(longitude, latitude));
-        List<Node> closeByNodes = new ArrayList(osmLoader.getAllNodesList().stream().filter(l ->
-                DistanceOp.isWithinDistance(l.pointGeometry, p, distanceDeg)
-        ).collect(Collectors.toList()));
-
-        return closeByNodes.iterator();
-
-    }
-
-    @Override
-    public Iterator<Line> findLinesCloseByCoordinate(double longitude, double latitude, int distance) {
-        double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
-        Point p = geometryFactory.createPoint(new Coordinate(longitude, latitude));
-        List closeByLines = new ArrayList(osmLoader.getAllLinesList().stream().filter(l ->
-                DistanceOp.isWithinDistance(l.lineGeometry, p, distanceDeg)
-        ).collect(Collectors.toList()));
-
-        return closeByLines.iterator();
-    }
-
-    @Override
-    public boolean hasTurnRestrictionOnPath(List<? extends Line> path) {
-        return false;
-    }
-
-    @Override
-    public Iterator<Node> getAllNodes() {
-
-        List allNodes = osmLoader.getAllNodesList();
-        return allNodes.iterator();
-    }
-
-    @Override
-    public Iterator<Line> getAllLines() {
-
-        List allLines = osmLoader.getAllLinesList();
-        return allLines.iterator();
-    }
-
-    @Override
-    public Rectangle2D.Double getMapBoundingBox() {
-
-        ArrayList<Double> bbox = osmLoader.getBoundingBoxInformation();
-        return new Rectangle2D.Double(bbox.get(0), bbox.get(1), bbox.get(2), bbox.get(3));
-    }
-
-    @Override
-    public int getNumberOfNodes() {
-       return osmLoader.numberOfNodes();
-    }
-
-    @Override
-    public int getNumberOfLines() {
-        return osmLoader.numberOfLines();
     }
 }

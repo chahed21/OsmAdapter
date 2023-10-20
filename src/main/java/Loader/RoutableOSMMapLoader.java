@@ -17,10 +17,14 @@ import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
 import org.locationtech.jts.geom.Point;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 import static org.jooq.sources.tables.Kanten.KANTEN;
@@ -40,7 +44,7 @@ import static org.jooq.sources.tables.Metadata.METADATA;
  */
 
 public class RoutableOSMMapLoader implements MapLoader {
-
+    private static final Logger logger = LoggerFactory.getLogger(RoutableOSMMapLoader.class);
     private final DSLContext ctx;
     private final Connection con;
     private final List<NodeImpl> allNodesList;
@@ -169,8 +173,11 @@ public class RoutableOSMMapLoader implements MapLoader {
         reversedLines.forEach(reversedLine -> linesReversed.add(LineConverter.reversedLineToOpenLRLine(reversedLine)));
 
         List allLines = ListUtils.union(linesDirect, linesReversed);
-
+        Instant StartLineNode = Instant.now();
         setLineNodes(allLines);
+        Instant EndLineNode = Instant.now();
+        Duration PeriodLineNode = Duration.between(StartLineNode, EndLineNode);
+        logger.info("Load all the directLines after transformations. Duration: " + PeriodLineNode);
         setLineGeometry(allLines);
 
         return allLines;
