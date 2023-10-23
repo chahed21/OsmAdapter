@@ -18,7 +18,7 @@ public class OsmAdapter {
     LineImpl line = (LineImpl)mapDb.getLine(4972);
     System.out.println("Getting Line Geometry from Database :" +
                        line.getLineGeometry());
-    System.out.println("Getting Start node LatitudeDeg from Line 4972: " +
-            line.getStartNode());
+    System.out.println("Getting Start node ID from Line 4972: " +
+            line.getStartNode().getID());
   }
 }

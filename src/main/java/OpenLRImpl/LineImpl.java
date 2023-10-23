@@ -71,13 +71,15 @@ public class LineImpl implements Line {
 
   @Override
   public Node getStartNode() {
-
+    if (this.startNode == null){this.startNode =this.mdb.getNode(this.startNode_id);
+    }
     return startNode;
   }
 
   @Override
   public Node getEndNode() {
-
+    if (this.endNode == null){this.endNode =this.mdb.getNode(this.endNode_id);
+    }
     return endNode;
   }
 

@@ -89,27 +89,25 @@ public class MapDatabaseImpl {
   }
 
   public Node getNode(long id) {
-    NodeImpl node = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
-                        .from(KNOTEN)
-                        .where(KNOTEN.NODE_ID.eq(id))
-                        .fetchOneInto(NodeImpl.class);
-    if (node == null) {
-      return null;
-    }
-    GeometryFactory factory = new GeometryFactory();
-    Point point =
-        factory.createPoint(new Coordinate(node.getLon(), node.getLat()));
-    node.setPointGeometry(point);
-    List<Long> connectedLinesIDs =
-        ctx.select()
-            .from(KANTEN)
-            .where(KANTEN.START_NODE.eq(node.getID()))
-            .or(KANTEN.END_NODE.eq(node.getID()))
-            .fetch()
-            .getValues(KANTEN.LINE_ID);
+    return ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
+            .from(KNOTEN)
+            .where(KNOTEN.NODE_ID.eq(id))
+            .fetchOne()
+            .map(record -> {
+              NodeImpl node = record.into(NodeImpl.class);
+              setNodeGeometry(node); // Apply the transformation function
+              setConnectedLinesList(node); // Apply another transformation function if needed
+              return node;
+            });
+  }
+  private void setConnectedLinesList(NodeImpl node ) {
+   List<Long> connectedLinesIDs = ctx.select().from(KANTEN)
+              .where(KANTEN.START_NODE.eq(node.getID()))
+              .or(KANTEN.END_NODE.eq(node.getID()))
+              .fetch().getValues(KANTEN.LINE_ID);
+
     node.setConnectedLinesIDs(connectedLinesIDs);
-    node.setMdb(this);
-    return node;
+
   }
 
   Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude,
@@ -123,6 +121,19 @@ public class MapDatabaseImpl {
   }
 
   public Iterator<Line> getAllLines() { return null; }
+
+  public Iterator<Node> getAllNodes() {
+
+
+    return null;
+  }
+
+  private void setNodeGeometry(NodeImpl node) {
+    GeometryFactory factory = new GeometryFactory();
+    Point point =
+            factory.createPoint(new Coordinate(node.getLon(), node.getLat()));
+    node.setPointGeometry(point);
+  }
 
   public void close() throws Exception {
     if (ctx != null)
