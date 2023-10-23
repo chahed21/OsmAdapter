@@ -30,88 +30,104 @@ import static org.jooq.sources.tables.Knoten.KNOTEN;
  * @author Emily Kast
  */
 
-public class MapDatabaseImpl  {
-    private final DSLContext ctx;
-    private final Connection con;
-    GeometryFactory geometryFactory = new GeometryFactory();
+public class MapDatabaseImpl {
+  GeometryFactory geometryFactory = new GeometryFactory();
+  private DSLContext ctx;
+  private Connection con;
 
-    public MapDatabaseImpl() {
-        try {
-            this.con = DatasourceConfig.getConnection();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        this.ctx = DSL.using(con, SQLDialect.POSTGRES);
+  public MapDatabaseImpl() {
+    try {
+      this.con = DatasourceConfig.getConnection();
+    } catch (SQLException e) {
+      throw new RuntimeException(e);
     }
+    this.ctx = DSL.using(con, SQLDialect.POSTGRES);
+  }
 
+  public boolean hasTurnRestrictions() { return false; }
 
-    public boolean hasTurnRestrictions() {
-        return false;
+  public Line getLine(long id) {
+    LineImpl line = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE,
+                               KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
+                               KANTEN.LENGTH_METER, KANTEN.NAME, KANTEN.ONEWAY)
+                        .from(KANTEN)
+                        .where(KANTEN.LINE_ID.eq(id))
+                        .fetchOneInto(LineImpl.class);
+    setLineGeometry(line);
+    line.setMdb(this);
+    return line;
+  }
+
+  /**
+   * Sets line geometry for each line in the list using WKT representation.
+   * @param linesList list containing all lines in the road network
+   */
+  private void setLineGeometry(LineImpl line) {
+
+    GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
+    WKTReader reader = new WKTReader(geometryFactory);
+    String wktString;
+    wktString = ctx.select(st_asText(line.isReversed()))
+                    .from(KANTEN)
+                    .where(KANTEN.LINE_ID.eq(line.getID()))
+                    .fetchOne()
+                    .value1()
+                    .toString();
+    try {
+      line.setLineGeometry((LineString)reader.read(wktString));
+    } catch (ParseException e) {
+      e.printStackTrace();
     }
+  }
 
-    public Line getLine(long id) {
-
-        LineImpl line = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
-                        KANTEN.LENGTH_METER, KANTEN.NAME,KANTEN.ONEWAY)
-                .from(KANTEN)
-                .where(KANTEN.LINE_ID.eq(id))
-                .fetchOneInto(LineImpl.class);
-        setLineGeometry(line);
-        return line;
-
+  private static Field<?> st_asText(boolean isReversed) {
+    if (!isReversed)
+      return DSL.field("ST_AsText(geom)");
+    else {
+      return DSL.field("ST_AsText(ST_Reverse(geom))");
     }
-    public Node getNode(long id) {
+  }
 
-        NodeImpl node = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
-                .from(KNOTEN)
-                .where(KNOTEN.NODE_ID.eq(id))
-                .fetchOneInto(NodeImpl.class);
-        if (node == null) {
-            return null;
-        }
-        GeometryFactory factory = new GeometryFactory();
-        Point point = factory.createPoint(new Coordinate(node.getLon(), node.getLat()));
-        node.setPointGeometry(point);
-        List<Long> connectedLinesIDs = ctx.select().from(KANTEN)
-                .where(KANTEN.START_NODE.eq(node.getID()))
-                .or(KANTEN.END_NODE.eq(node.getID()))
-                .fetch().getValues(KANTEN.LINE_ID);
-        node.setConnectedLinesIDs(connectedLinesIDs);
-        return node;
+  public Node getNode(long id) {
+    NodeImpl node = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
+                        .from(KNOTEN)
+                        .where(KNOTEN.NODE_ID.eq(id))
+                        .fetchOneInto(NodeImpl.class);
+    if (node == null) {
+      return null;
     }
+    GeometryFactory factory = new GeometryFactory();
+    Point point =
+        factory.createPoint(new Coordinate(node.getLon(), node.getLat()));
+    node.setPointGeometry(point);
+    List<Long> connectedLinesIDs =
+        ctx.select()
+            .from(KANTEN)
+            .where(KANTEN.START_NODE.eq(node.getID()))
+            .or(KANTEN.END_NODE.eq(node.getID()))
+            .fetch()
+            .getValues(KANTEN.LINE_ID);
+    node.setConnectedLinesIDs(connectedLinesIDs);
+    node.setMdb(this);
+    return node;
+  }
 
-    Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude, int distance){
-        double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
-        Point p = geometryFactory.createPoint(new Coordinate(longitude, latitude));
-        List<Node> closeByNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
-                .from(KNOTEN).fetchInto(NodeImpl.class);
-        return null;
-    }
-    public Iterator<Line> getAllLines() {
-        return null;
-    }
-    /**
-     * Sets line geometry for each line in the list using WKT representation.
-     * @param linesList list containing all lines in the road network
-     */
-    private void setLineGeometry(LineImpl line) {
+  Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude,
+                                            int distance) {
+    double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
+    Point p = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+    List<Node> closeByNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
+                                  .from(KNOTEN)
+                                  .fetchInto(NodeImpl.class);
+    return null;
+  }
 
-        GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
-        WKTReader reader = new WKTReader( geometryFactory );
-        String wktString;
-        wktString = ctx.select(st_asText(line.isReversed())).from(KANTEN).where(KANTEN.LINE_ID.eq(line.getID())).fetchOne().value1().toString();
-        try {
-            line.setLineGeometry((LineString) reader.read(wktString));
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+  public Iterator<Line> getAllLines() { return null; }
 
-    }
-    private static Field<?> st_asText(boolean isReversed) {
-        if(!isReversed)
-            return DSL.field("ST_AsText(geom)");
-        else {
-            return DSL.field("ST_AsText(ST_Reverse(geom))");
-        }
-    }
+  public void close() throws Exception {
+    if (ctx != null)
+      ctx.close();
+    if (con != null)
+      con.close();
+  }
 }
