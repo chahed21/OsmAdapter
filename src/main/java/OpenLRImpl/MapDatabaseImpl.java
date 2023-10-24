@@ -5,9 +5,7 @@ import GeometryFunctions.GeometryFunctions;
 import openlr.map.Line;
 import openlr.map.Node;
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.SQLDialect;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -119,20 +117,18 @@ public class MapDatabaseImpl {
   }
 
     public Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude, int distance) {
-
         double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
-        Point p = geometryFactory.createPoint(new Coordinate(longitude, latitude));
-
+        Condition condition = DSL.condition("ST_DWithin({0}::geometry, ST_SetSRID(ST_MakePoint({1}, {2}), 4326), {3})",
+                DSL.field(name("geom")), DSL.val(longitude), DSL.val(latitude), DSL.val(distanceDeg));
         List<Node> closeByNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
                 .from(KNOTEN)
-                .where(field("ST_DWithin({0}, POINT({1}, {2}), {3})",
-                Boolean.class, field(name("geom")), longitude, latitude, distanceDeg))
+                .where(condition)
                 .fetch()
                 .map(record -> {
                     NodeImpl node = record.into(NodeImpl.class);
                     setNodeGeometry(node); // Apply the transformation function
                     setConnectedLinesList(node);
-                    node.setMdb(this);// Apply another transformation function if needed
+                    node.setMdb(this); // Apply another transformation function if needed
                     return node;
                 });
 
