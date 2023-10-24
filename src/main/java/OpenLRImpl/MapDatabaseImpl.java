@@ -21,6 +21,8 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.name;
 import static org.jooq.sources.tables.Kanten.KANTEN;
 import static org.jooq.sources.tables.Knoten.KNOTEN;
 
@@ -84,9 +86,9 @@ public class MapDatabaseImpl {
 
   private static Field<?> st_asText(boolean isReversed) {
     if (!isReversed)
-      return DSL.field("ST_AsText(geom)");
+      return field("ST_AsText(geom)");
     else {
-      return DSL.field("ST_AsText(ST_Reverse(geom))");
+      return field("ST_AsText(ST_Reverse(geom))");
     }
   }
 
@@ -116,15 +118,26 @@ public class MapDatabaseImpl {
 
   }
 
-  Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude,
-                                            int distance) {
-    double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
-    Point p = geometryFactory.createPoint(new Coordinate(longitude, latitude));
-    List<Node> closeByNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
-                                  .from(KNOTEN)
-                                  .fetchInto(NodeImpl.class);
-    return null;
-  }
+    public Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude, int distance) {
+
+        double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
+        Point p = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+
+        List<Node> closeByNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
+                .from(KNOTEN)
+                .where(field("ST_DWithin({0}, POINT({1}, {2}), {3})",
+                Boolean.class, field(name("geom")), longitude, latitude, distanceDeg))
+                .fetch()
+                .map(record -> {
+                    NodeImpl node = record.into(NodeImpl.class);
+                    setNodeGeometry(node); // Apply the transformation function
+                    setConnectedLinesList(node);
+                    node.setMdb(this);// Apply another transformation function if needed
+                    return node;
+                });
+
+        return closeByNodes.iterator();
+    }
 
   public Iterator<Line> getAllLines() {
       List<Line> allLines = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE,

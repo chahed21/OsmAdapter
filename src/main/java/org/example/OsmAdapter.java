@@ -35,5 +35,6 @@ public class OsmAdapter {
       // Do something with 'node'
       System.out.println("Getting Start node ID from Line "+ lineItr.getID()+ ": " + lineItr.getStartNode().getID());
     }
+    //Iterator <Node> itlrClose = mapDb.findNodesCloseByCoordinate(51.21663319921368,14.117331000000002,1);
   }
 }
