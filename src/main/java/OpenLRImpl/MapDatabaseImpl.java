@@ -168,4 +168,14 @@ public class MapDatabaseImpl {
     if (con != null)
       con.close();
   }
+    public int getNumberOfNodes(){
+        return ctx.selectCount()
+                .from(KNOTEN)
+                .fetchOne(0, int.class);
+    }
+    public int getNumberOfLines() {
+        return ctx.selectCount()
+                .from(KANTEN)
+                .fetchOne(0, int.class);
+    }
 }
