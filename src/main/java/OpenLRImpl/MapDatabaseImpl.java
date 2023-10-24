@@ -126,7 +126,20 @@ public class MapDatabaseImpl {
     return null;
   }
 
-  public Iterator<Line> getAllLines() { return null; }
+  public Iterator<Line> getAllLines() {
+      List<Line> allLines = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE,
+                      KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
+                      KANTEN.LENGTH_METER, KANTEN.NAME, KANTEN.ONEWAY)
+              .from(KANTEN)
+              .fetch()
+              .map(record -> {
+                  LineImpl line = record.into(LineImpl.class);
+                  setLineGeometry(line);
+                  line.setMdb(this);
+                  return line;
+              });
+      return allLines.iterator();
+     }
 
   public Iterator<Node> getAllNodes() {
 

@@ -3,7 +3,7 @@ package org.example;
 import OpenLRImpl.LineImpl;
 import OpenLRImpl.MapDatabaseImpl;
 import OpenLRImpl.NodeImpl;
-import openlr.map.Node;
+import openlr.map.Line;
 import org.locationtech.jts.geom.Point;
 
 import java.sql.SQLException;
@@ -22,14 +22,14 @@ public class OsmAdapter {
                        line.getLineGeometry());
     System.out.println("Getting Start node ID from Line 4972: " +
             line.getStartNode().getID());
-    Iterator <Node> itr = mapDb.getAllNodes();
+    Iterator <Line> itr = mapDb.getAllLines();
     while (itr.hasNext()) {
       // Get the next element from the iterator
-      Node nodeItr = itr.next();
+      Line lineItr = itr.next();
 
       // Now, 'node' contains the current element from the iteration
       // Do something with 'node'
-      System.out.println(nodeItr.hashCode());
+      System.out.println("Getting Start node ID from Line "+ lineItr.getID()+ ": " + lineItr.getStartNode().getID());
     }
   }
 }
