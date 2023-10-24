@@ -47,15 +47,17 @@ public class MapDatabaseImpl {
   public boolean hasTurnRestrictions() { return false; }
 
   public Line getLine(long id) {
-    LineImpl line = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE,
+    return ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE,
                                KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
                                KANTEN.LENGTH_METER, KANTEN.NAME, KANTEN.ONEWAY)
                         .from(KANTEN)
                         .where(KANTEN.LINE_ID.eq(id))
-                        .fetchOneInto(LineImpl.class);
-    setLineGeometry(line);
-    line.setMdb(this);
-    return line;
+                        .fetchOne().map(record -> {
+                        LineImpl line = record.into(LineImpl.class);
+                        setLineGeometry(line);
+                        line.setMdb(this);
+                        return line;
+            });
   }
 
   /**
@@ -96,9 +98,13 @@ public class MapDatabaseImpl {
             .map(record -> {
               NodeImpl node = record.into(NodeImpl.class);
               setNodeGeometry(node); // Apply the transformation function
-              setConnectedLinesList(node); // Apply another transformation function if needed
+              setConnectedLinesList(node);
+              node.setMdb(this);// Apply another transformation function if needed
               return node;
             });
+  }
+  public boolean hasTurnRestrictionOnPath(List<? extends Line> path) {
+    return false;
   }
   private void setConnectedLinesList(NodeImpl node ) {
    List<Long> connectedLinesIDs = ctx.select().from(KANTEN)
@@ -124,8 +130,16 @@ public class MapDatabaseImpl {
 
   public Iterator<Node> getAllNodes() {
 
-
-    return null;
+    List<Node> allNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
+            .from(KNOTEN)
+            .fetch()
+            .map(record -> {
+              NodeImpl node = record.into(NodeImpl.class);
+              setNodeGeometry(node); // Apply the transformation function
+              setConnectedLinesList(node); // Apply another transformation function if needed
+              return node;
+            });
+    return allNodes.iterator();
   }
 
   private void setNodeGeometry(NodeImpl node) {
