@@ -1,14 +1,13 @@
 package OpenLRImpl;
 
 import GeometryFunctions.GeometryFunctions;
+import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
+import java.util.*;
 import openlr.map.*;
 import org.geotools.referencing.GeodeticCalculator;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.operation.distance.DistanceOp;
-
-import java.awt.geom.Path2D;
-import java.awt.geom.Point2D;
-import java.util.*;
 
 /**
  * Implementation of the TomTom OpenLR Line interface.
@@ -71,14 +70,16 @@ public class LineImpl implements Line {
 
   @Override
   public Node getStartNode() {
-    if (this.startNode == null){this.startNode =this.mdb.getNode(this.startNode_id);
+    if (this.startNode == null) {
+      this.startNode = this.mdb.getNode(this.startNode_id);
     }
     return startNode;
   }
 
   @Override
   public Node getEndNode() {
-    if (this.endNode == null){this.endNode =this.mdb.getNode(this.endNode_id);
+    if (this.endNode == null) {
+      this.endNode = this.mdb.getNode(this.endNode_id);
     }
     return endNode;
   }
@@ -261,7 +262,8 @@ public class LineImpl implements Line {
     return line_id == line.line_id && startNode_id == line.startNode_id &&
         endNode_id == line.endNode_id && frc == line.frc && fow == line.fow &&
         length_meter == line.length_meter && isReversed == line.isReversed &&
-        startNode.equals(line.startNode) && endNode.equals(line.endNode) &&
+        getStartNode().equals(line.getStartNode()) &&
+        getEndNode().equals(line.getEndNode()) &&
         Objects.equals(name, line.name) &&
         lineGeometry.equals(line.lineGeometry);
   }
