@@ -1,11 +1,13 @@
 package OpenLRImpl;
 
 import DataBase.DatasourceConfig;
-import GeometryFunctions.GeometryFunctions;
 import openlr.map.Line;
 import openlr.map.Node;
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.jooq.*;
+import org.jooq.Condition;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -14,6 +16,7 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
 
+import java.awt.geom.Rectangle2D;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -21,6 +24,7 @@ import java.util.List;
 
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.name;
+import static org.jooq.sources.Tables.METADATA;
 import static org.jooq.sources.tables.Kanten.KANTEN;
 import static org.jooq.sources.tables.Knoten.KNOTEN;
 
@@ -116,9 +120,9 @@ public class MapDatabaseImpl {
 
   }
     public Iterator<Line> findLinesCloseByCoordinate(double longitude, double latitude, int distance) {
-        double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
+        // double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
         Condition condition = DSL.condition("ST_DWithin({0}::geometry, ST_SetSRID(ST_MakePoint({1}, {2}), 4326), {3})",
-                DSL.field(name("geom")), DSL.val(longitude), DSL.val(latitude), DSL.val(distanceDeg));
+                DSL.field(name("geom")), DSL.val(longitude), DSL.val(latitude), DSL.val(distance));
         List<Line> closeByLines = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
                         KANTEN.LENGTH_METER, KANTEN.NAME, KANTEN.ONEWAY)
                 .from(KANTEN)
@@ -134,9 +138,9 @@ public class MapDatabaseImpl {
         return closeByLines.iterator();
     }
     public Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude, int distance) {
-      double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
+      //double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
       Condition condition = DSL.condition("ST_DWithin({0}::geometry, ST_SetSRID(ST_MakePoint({1}, {2}), 4326), {3})",
-              DSL.field(name("geom")), DSL.val(longitude), DSL.val(latitude), DSL.val(distanceDeg));
+              DSL.field(name("geom")), DSL.val(longitude), DSL.val(latitude), DSL.val(distance));
       List<Node> closeByNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
               .from(KNOTEN)
               .where(condition)
@@ -187,7 +191,16 @@ public class MapDatabaseImpl {
             factory.createPoint(new Coordinate(node.getLon(), node.getLat()));
     node.setPointGeometry(point);
   }
+    public Rectangle2D.Double getMapBoundingBox() {
 
+        double x = ctx.select(METADATA.LEFT_LAT).from(METADATA).fetchOne().value1();
+        double y = ctx.select(METADATA.LEFT_LON).from(METADATA).fetchOne().value1();
+        double width =
+                ctx.select(METADATA.BBOX_WIDTH).from(METADATA).fetchOne().value1();
+        double height =
+                ctx.select(METADATA.BBOX_HEIGHT).from(METADATA).fetchOne().value1();
+        return new Rectangle2D.Double(x, y, width, height);
+    }
   public void close() throws Exception {
     if (ctx != null)
       ctx.close();
