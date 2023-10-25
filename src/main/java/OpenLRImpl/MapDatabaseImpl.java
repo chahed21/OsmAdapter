@@ -115,27 +115,44 @@ public class MapDatabaseImpl {
     node.setConnectedLinesIDs(connectedLinesIDs);
 
   }
-
-    public Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude, int distance) {
+    public Iterator<Line> findLinesCloseByCoordinate(double longitude, double latitude, int distance) {
         double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
         Condition condition = DSL.condition("ST_DWithin({0}::geometry, ST_SetSRID(ST_MakePoint({1}, {2}), 4326), {3})",
                 DSL.field(name("geom")), DSL.val(longitude), DSL.val(latitude), DSL.val(distanceDeg));
-        List<Node> closeByNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
-                .from(KNOTEN)
+        List<Line> closeByLines = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
+                        KANTEN.LENGTH_METER, KANTEN.NAME, KANTEN.ONEWAY)
+                .from(KANTEN)
                 .where(condition)
                 .fetch()
                 .map(record -> {
-                    NodeImpl node = record.into(NodeImpl.class);
-                    setNodeGeometry(node); // Apply the transformation function
-                    setConnectedLinesList(node);
-                    node.setMdb(this); // Apply another transformation function if needed
-                    return node;
+                    LineImpl line = record.into(LineImpl.class);
+                    setLineGeometry(line); // Apply the transformation function
+                    line.setMdb(this); // Apply another transformation function if needed
+                    return line;
                 });
 
-        return closeByNodes.iterator();
+        return closeByLines.iterator();
+    }
+    public Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude, int distance) {
+      double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
+      Condition condition = DSL.condition("ST_DWithin({0}::geometry, ST_SetSRID(ST_MakePoint({1}, {2}), 4326), {3})",
+              DSL.field(name("geom")), DSL.val(longitude), DSL.val(latitude), DSL.val(distanceDeg));
+      List<Node> closeByNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
+              .from(KNOTEN)
+              .where(condition)
+              .fetch()
+              .map(record -> {
+                  NodeImpl node = record.into(NodeImpl.class);
+                  setNodeGeometry(node); // Apply the transformation function
+                  setConnectedLinesList(node);
+                  node.setMdb(this); // Apply another transformation function if needed
+                  return node;
+              });
+
+      return closeByNodes.iterator();
     }
 
-  public Iterator<Line> getAllLines() {
+    public Iterator<Line> getAllLines() {
       List<Line> allLines = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE,
                       KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
                       KANTEN.LENGTH_METER, KANTEN.NAME, KANTEN.ONEWAY)
