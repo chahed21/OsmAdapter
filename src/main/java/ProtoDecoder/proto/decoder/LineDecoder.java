@@ -16,7 +16,7 @@ import java.util.List;
 public class LineDecoder implements LocationReferenceDecoder {
     private final LocationReferencePointDecoder locationReferencePointDecoder;
 
-    LineDecoder(LocationReferencePointDecoder locationReferencePointDecoder) {
+    public LineDecoder(LocationReferencePointDecoder locationReferencePointDecoder) {
         this.locationReferencePointDecoder = locationReferencePointDecoder;
     }
 
@@ -27,7 +27,7 @@ public class LineDecoder implements LocationReferenceDecoder {
         }
 
         LinearLocationReference lineLocationReference = data.getLinearLocationReference();
-        if (lineLocationReference.hasFirst() || lineLocationReference.hasLast() ){
+        if (!(lineLocationReference.hasFirst() && lineLocationReference.hasLast()) ){
             throw new OpenLRProtoException(OpenLRProtoStatusCode.INVALID_LOCATION_REFERENCE);
         }
 
