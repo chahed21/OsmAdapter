@@ -1079,7 +1079,7 @@ private static final long serialVersionUID = 0L;
        *
        * <code>.OpenLR.LinearLocationReference.FunctionalRoadClass functionalRoadClass = 1;</code>
        */
-      openlr.map.FunctionalRoadClass getFunctionalRoadClass();
+      FunctionalRoadClass getFunctionalRoadClass();
 
       /**
        * <pre>
@@ -1405,7 +1405,7 @@ private static final long serialVersionUID = 0L;
        *
        * <code>.OpenLR.LinearLocationReference.FunctionalRoadClass functionalRoadClass = 1;</code>
        */
-      public openlr.map.FunctionalRoadClass getFunctionalRoadClass() {
+      public FunctionalRoadClass getFunctionalRoadClass() {
         @SuppressWarnings("deprecation")
         joynext.protobuf.OpenLR.LinearLocationReference.FunctionalRoadClass result = joynext.protobuf.OpenLR.LinearLocationReference.FunctionalRoadClass.valueOf(functionalRoadClass_);
         return result == null ? joynext.protobuf.OpenLR.LinearLocationReference.FunctionalRoadClass.UNRECOGNIZED : result;
@@ -1814,7 +1814,7 @@ private static final long serialVersionUID = 0L;
          *
          * <code>.OpenLR.LinearLocationReference.FunctionalRoadClass functionalRoadClass = 1;</code>
          */
-        public openlr.map.FunctionalRoadClass getFunctionalRoadClass() {
+        public FunctionalRoadClass getFunctionalRoadClass() {
           @SuppressWarnings("deprecation")
           joynext.protobuf.OpenLR.LinearLocationReference.FunctionalRoadClass result = joynext.protobuf.OpenLR.LinearLocationReference.FunctionalRoadClass.valueOf(functionalRoadClass_);
           return result == null ? joynext.protobuf.OpenLR.LinearLocationReference.FunctionalRoadClass.UNRECOGNIZED : result;

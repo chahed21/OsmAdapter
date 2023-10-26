@@ -30,19 +30,25 @@ public class LineDecoder implements LocationReferenceDecoder {
         if (lineLocationReference.hasFirst() || lineLocationReference.hasLast() ){
             throw new OpenLRProtoException(OpenLRProtoStatusCode.INVALID_LOCATION_REFERENCE);
         }
-        List<LocationReferencePoint> locationReferencePoints = new ArrayList<>();
 
-        for (int sequenceNumber = 1; sequenceNumber <= lrpCount; sequenceNumber++) {
-            LocationReferencePoint locationReferencePoint = locationReferencePointDecoder.decode(
-                    LinearLocationReference.getLocationReferencePoints(sequenceNumber - 1),
-                    sequenceNumber,
-                    sequenceNumber == lrpCount);
-            locationReferencePoints.add(locationReferencePoint);
+        List<LocationReferencePoint> locationReferencePoints = new ArrayList<>();
+        int sequenceNumber=1;
+        LocationReferencePoint firstLocationReferencePoint = locationReferencePointDecoder.decode(lineLocationReference.getFirst(),sequenceNumber);
+        locationReferencePoints.add(firstLocationReferencePoint);
+
+        for (LinearLocationReference.IntermediateLocationReferencePoint intermediatePoint : lineLocationReference.getIntermediatesList()) {
+            ++sequenceNumber;
+            LocationReferencePoint intermediateLocationReferencePoint = locationReferencePointDecoder.decode(intermediatePoint,sequenceNumber);
+            locationReferencePoints.add(intermediateLocationReferencePoint);
         }
 
+        LocationReferencePoint lastLocationReferencePoint = locationReferencePointDecoder.decode(lineLocationReference.getLast(),sequenceNumber);
+        ++sequenceNumber;
+        locationReferencePoints.add(lastLocationReferencePoint);
+
         Offsets offsets = new OffsetsProtoImpl(
-                lineLocationReference.getPositiveOffset(),
-                lineLocationReference.getNegativeOffset());
+                0,
+                0);
 
         return new RawLineLocRef(id, locationReferencePoints, offsets);
     }
