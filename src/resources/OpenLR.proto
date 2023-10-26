@@ -5,6 +5,7 @@
 
 syntax = "proto3";
 
+option java_multiple_files = true;
 package joynext.protobuf;
 
 // OpenLR defines the location reference according to the TPEG2-OLR1.0/002 specification.
