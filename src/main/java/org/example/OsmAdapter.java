@@ -1,13 +1,25 @@
 package org.example;
 
+import OpenLRImpl.MapDatabaseImpl;
 import ProtoDecoder.proto.decoder.LineDecoder;
 import ProtoDecoder.proto.decoder.LocationReferencePointDecoder;
 import joynext.protobuf.OpenLR;
 import openlr.PhysicalFormatException;
+import openlr.binary.ByteArray;
+import openlr.binary.OpenLRBinaryDecoder;
+import openlr.binary.impl.LocationReferenceBinaryImpl;
+import openlr.decoder.OpenLRDecoder;
+import openlr.decoder.OpenLRDecoderParameter;
+import openlr.location.Location;
+import openlr.map.MapDatabase;
+import openlr.properties.OpenLRPropertiesReader;
 import openlr.rawLocRef.RawLocationReference;
+import org.apache.commons.configuration.FileConfiguration;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
+import java.util.Base64;
 
 public class OsmAdapter {
 
@@ -66,10 +78,33 @@ public class OsmAdapter {
       // Build the LinearLocationReference
       OpenLR.LinearLocationReference linearLocationReference = linearLocationBuilder.build();
       openLRMessageBuilder.setLinearLocationReference(linearLocationBuilder.build());
+
+
+      String openlr = "CwmQ9SVWJS2qBAD9/14tCQ==";
+      //Initialize the binary decoder and decode the binary string
+      OpenLRBinaryDecoder binaryDecoder = new OpenLRBinaryDecoder();
+      ByteArray byteArray = new ByteArray(Base64.getDecoder().decode(openlr));
+      System.out.println("Byte array"+byteArray);
+      LocationReferenceBinaryImpl locationReferenceBinary = new LocationReferenceBinaryImpl("0", byteArray);
+      System.out.println("locationReferenceBinary : "+locationReferenceBinary);
+      RawLocationReference rawLocationReference = binaryDecoder.decodeData(locationReferenceBinary);
+      System.out.println("rawLocationReference from binary:"+rawLocationReference);
+
       OpenLR openLRLocationReference = openLRMessageBuilder.build();
       LineDecoder exampleLineDecoder = new LineDecoder(new LocationReferencePointDecoder());
-      RawLocationReference exampleRawLineLocRef = exampleLineDecoder.decode("0",openLRLocationReference);
-      System.out.println(exampleRawLineLocRef.toString());
+      RawLocationReference exampleRawLineLocRef = exampleLineDecoder.decode("1",openLRLocationReference);
+      System.out.println("rawLocationReference from protobuf:"+exampleRawLineLocRef);
+      //System.out.println(openLRLocationReference);
+
+      // Initialize database
+      MapDatabase mapDatabase = new MapDatabaseImpl();
+      FileConfiguration decoderConfig = OpenLRPropertiesReader.loadPropertiesFromFile(new File("src/resources/OpenLR-Decoder-Properties.xml"));
+      OpenLRDecoderParameter params = new OpenLRDecoderParameter.Builder().with(mapDatabase).with(decoderConfig).buildParameter();
+      //Initialize the decoder
+      OpenLRDecoder decoder = new openlr.decoder.OpenLRDecoder();
+      Location location = decoder.decodeRaw(params, exampleRawLineLocRef);
+      System.out.println("From decoder :"+location.getLocationLines());
+
     } catch (Exception e) {
       e.printStackTrace();
     }

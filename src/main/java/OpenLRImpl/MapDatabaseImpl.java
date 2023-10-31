@@ -15,7 +15,7 @@ import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
-
+import openlr.map.MapDatabase;
 import java.awt.geom.Rectangle2D;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -34,7 +34,7 @@ import static org.jooq.sources.tables.Knoten.KNOTEN;
  * @author Emily Kast
  */
 
-public class MapDatabaseImpl {
+public class MapDatabaseImpl implements  MapDatabase {
   GeometryFactory geometryFactory = new GeometryFactory();
   private DSLContext ctx;
   private Connection con;
@@ -48,8 +48,9 @@ public class MapDatabaseImpl {
     this.ctx = DSL.using(con, SQLDialect.POSTGRES);
   }
 
+  @Override
   public boolean hasTurnRestrictions() { return false; }
-
+    @Override
   public Line getLine(long id) {
     return ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE,
                                KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
@@ -68,6 +69,7 @@ public class MapDatabaseImpl {
    * Sets line geometry for each line in the list using WKT representation.
    * @param linesList list containing all lines in the road network
    */
+
   private void setLineGeometry(LineImpl line) {
 
     GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
@@ -93,7 +95,7 @@ public class MapDatabaseImpl {
       return field("ST_AsText(ST_Reverse(geom))");
     }
   }
-
+  @Override
   public Node getNode(long id) {
     return ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
             .from(KNOTEN)
@@ -107,6 +109,7 @@ public class MapDatabaseImpl {
               return node;
             });
   }
+  @Override
   public boolean hasTurnRestrictionOnPath(List<? extends Line> path) {
     return false;
   }
@@ -119,6 +122,7 @@ public class MapDatabaseImpl {
     node.setConnectedLinesIDs(connectedLinesIDs);
 
   }
+    @Override
     public Iterator<Line> findLinesCloseByCoordinate(double longitude, double latitude, int distance) {
         // double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
         Condition condition = DSL.condition("ST_DWithin({0}::geometry, ST_SetSRID(ST_MakePoint({1}, {2}), 4326), {3})",
@@ -137,6 +141,7 @@ public class MapDatabaseImpl {
 
         return closeByLines.iterator();
     }
+    @Override
     public Iterator<Node> findNodesCloseByCoordinate(double longitude, double latitude, int distance) {
       //double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
       Condition condition = DSL.condition("ST_DWithin({0}::geometry, ST_SetSRID(ST_MakePoint({1}, {2}), 4326), {3})",
@@ -155,7 +160,7 @@ public class MapDatabaseImpl {
 
       return closeByNodes.iterator();
     }
-
+    @Override
     public Iterator<Line> getAllLines() {
       List<Line> allLines = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE,
                       KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
@@ -170,7 +175,7 @@ public class MapDatabaseImpl {
               });
       return allLines.iterator();
      }
-
+    @Override
   public Iterator<Node> getAllNodes() {
 
     List<Node> allNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
@@ -207,11 +212,13 @@ public class MapDatabaseImpl {
     if (con != null)
       con.close();
   }
+    @Override
     public int getNumberOfNodes(){
         return ctx.selectCount()
                 .from(KNOTEN)
                 .fetchOne(0, int.class);
     }
+    @Override
     public int getNumberOfLines() {
         return ctx.selectCount()
                 .from(KANTEN)
