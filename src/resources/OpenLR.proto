@@ -1,0 +1,115 @@
+/*
+ * @brief definition of OpenLR location reference method
+ * @author Andreas Kahlenbach (andreas.kahlenbach@preh.de)
+*/
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+package joynext.protobuf;
+
+// OpenLR defines the location reference according to the TPEG2-OLR1.0/002 specification.
+// The solution will only support the following OpenLR types:  LinearLocationReference
+message OpenLR
+{
+   message GeoCoordinate
+   {
+     sint32 longitude = 1; // mandatory, reference TPEG2-OLR_1.0/002 section 5.5
+     sint32 latitude = 2;  // mandatory, reference TPEG2-OLR_1.0/002 section 5.5
+   }
+
+   // Represents a linear location reference as defined in OpenLR location reference (TPEG2-OLR_1.0/002). Please see the OLR spec for
+   // encoding and semantics of the following parameters.
+   message LinearLocationReference
+   {
+      enum FunctionalRoadClass
+      {
+         FUNCTIONAL_ROAD_CLASS_INVALID = 0;
+         FUNCTIONAL_ROAD_CLASS_0 = 1;
+         FUNCTIONAL_ROAD_CLASS_1 = 2;
+         FUNCTIONAL_ROAD_CLASS_2 = 3;
+         FUNCTIONAL_ROAD_CLASS_3 = 4;
+         FUNCTIONAL_ROAD_CLASS_4 = 5;
+         FUNCTIONAL_ROAD_CLASS_5 = 6;
+         FUNCTIONAL_ROAD_CLASS_6 = 7;
+         FUNCTIONAL_ROAD_CLASS_7 = 8;
+      }
+
+      message LineProperties
+      {
+         enum FormOfWay
+         {
+            FORM_OF_WAY_INVALID = 0;
+            FORM_OF_WAY_UNDEFINED = 1;
+            FORM_OF_WAY_MOTORWAY = 2;
+            FORM_OF_WAY_MULTIPLE_CARRIAGEWAY = 3;
+            FORM_OF_WAY_SINGLE_CARRIAGEWAY = 4;
+            FORM_OF_WAY_ROUNDABOUT = 5;
+            FORM_OF_WAY_TRAFFIC_SQUARE = 6;
+            FORM_OF_WAY_SLIPROAD = 7;
+            FORM_OF_WAY_OTHER = 8;
+            FORM_OF_WAY_BIKE_PATH = 9;
+            FORM_OF_WAY_FOOTPATH = 10;
+            FORM_OF_WAY_PEDESTRAIN_ZONE = 11;
+         }
+
+         FunctionalRoadClass functionalRoadClass = 1; // mandatory
+         FormOfWay formOfWay = 2;                     // mandatory
+         uint32 bearing = 3;                          // mandatory, angle from north in degree without any quantization
+      }
+
+      message PathProperties
+      {
+         FunctionalRoadClass lowestFRCToNextLRP = 1;  // mandatory
+         uint32 distanceToNextLRP = 2;                // mandatory, in meter
+      }
+
+      message FirstLocationReferencePoint
+      {
+         GeoCoordinate absoluteCoordinate = 1;  // mandatory, encoded as absolute geo coordinate (see TPEG2-OLR_1.0/002 section 5.5.1)
+         LineProperties lineProperties = 2;     // mandatory
+         PathProperties pathProperties = 3;     // mandatory
+      }
+
+      message IntermediateLocationReferencePoint
+      {
+         GeoCoordinate relativeCoordinate = 1;  // mandatory, encoded as relative geo coordinate (see TPEG2-OLR_1.0/002 section 5.5.2)
+         LineProperties lineProperties = 2;     // mandatory
+         PathProperties pathProperties = 3;     // mandatory
+      }
+
+      message LastLocationReferencePoint
+      {
+         GeoCoordinate relativeCoordinate = 1;  // mandatory, encoded as relative geo coordinate (see TPEG2-OLR_1.0/002 section 5.5.2)
+         LineProperties lineProperties = 2;     // mandatory
+      }
+
+      FirstLocationReferencePoint first = 1;                         // mandatory
+      LastLocationReferencePoint last = 2;                           // mandatory
+      repeated IntermediateLocationReferencePoint intermediates = 3; // optional
+   }
+
+   // Represents an area location reference as defined in OpenLR location reference (TPEG2-OLR_1.0/002). Please see the OLR spec for
+   // encoding and semantics of the following parameters.
+   message AreaLocationReference
+   {
+      message PolygonLocationReference
+      {
+         GeoCoordinate firstCoordinateAbsolute = 1;
+         repeated GeoCoordinate remainingCoordinatesRelative = 2;
+      }
+
+      oneof AreaMethod
+      {
+         PolygonLocationReference polygon = 1;
+      }
+   }
+
+   oneof LocationReference
+   {
+      LinearLocationReference linearLocationReference = 1;  // mandatory, Represents a linear location reference as defined
+                                                            // in OpenLR location reference (TPEG2-OLR_1.0/002)
+      AreaLocationReference areaLocationReference = 2;      // Represents a area location reference as defined
+                                                            // in OpenLR location reference (TPEG2-OLR_1.0/002)
+   }
+}

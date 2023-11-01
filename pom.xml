@@ -15,6 +15,11 @@
     </properties>
     <dependencies>
         <dependency>
+            <groupId>org.openlr</groupId>
+            <artifactId>data</artifactId>
+            <version>1.4.3</version>
+        </dependency>
+        <dependency>
             <groupId>org.locationtech.jts</groupId>
             <artifactId>jts-core</artifactId>
             <version>1.17.1</version>
@@ -78,6 +83,16 @@
             <groupId>org.geotools</groupId>
             <artifactId>gt-main</artifactId>
             <version>24.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openlr</groupId>
+            <artifactId>binary</artifactId>
+            <version>1.4.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openlr</groupId>
+            <artifactId>decoder</artifactId>
+            <version>1.4.3</version>
         </dependency>
     </dependencies>
 
