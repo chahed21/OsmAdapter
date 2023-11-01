@@ -1,6 +1,6 @@
 package ProtoDecoder.proto.decoder;
 
-import joynext.protobuf.OpenLR;
+import joynext.protobuf.SnapshotOuterClass.OpenLR;
 import openlr.rawLocRef.RawLocationReference;
 import ProtoDecoder.proto.OpenLRProtoException;
 public interface LocationReferenceDecoder {

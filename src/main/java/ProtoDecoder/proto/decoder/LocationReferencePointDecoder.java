@@ -6,7 +6,7 @@ import openlr.map.FunctionalRoadClass;
 import ProtoDecoder.proto.OpenLRProtoException;
 import ProtoDecoder.proto.OpenLRProtoStatusCode;
 import ProtoDecoder.impl.LocationReferencePointProtoImpl;
-import joynext.protobuf.OpenLR;
+import joynext.protobuf.SnapshotOuterClass.OpenLR;
 
 public class LocationReferencePointDecoder {
     LocationReferencePoint decode(OpenLR.LinearLocationReference.FirstLocationReferencePoint data, int sequenceNumber) throws OpenLRProtoException {

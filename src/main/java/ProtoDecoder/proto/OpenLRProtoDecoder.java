@@ -1,12 +1,13 @@
 package ProtoDecoder.proto;
 
+import ProtoDecoder.proto.decoder.LocationReferenceDecoder;
+import ProtoDecoder.proto.decoder.LocationTypeDecoderRegistry;
+import joynext.protobuf.SnapshotOuterClass;
+import joynext.protobuf.SnapshotOuterClass.OpenLR;
 import openlr.LocationReference;
 import openlr.LocationType;
 import openlr.PhysicalDecoder;
 import openlr.PhysicalFormatException;
-import ProtoDecoder.proto.decoder.LocationReferenceDecoder;
-import ProtoDecoder.proto.decoder.LocationTypeDecoderRegistry;
-import joynext.protobuf.OpenLR;
 import openlr.rawLocRef.RawLocationReference;
 
 public class OpenLRProtoDecoder implements PhysicalDecoder {
@@ -14,7 +15,7 @@ public class OpenLRProtoDecoder implements PhysicalDecoder {
 
     @Override
     public Class<?> getDataClass() {
-        return OpenLR.class;
+        return SnapshotOuterClass.OpenLR.class;
     }
 
     @Override
