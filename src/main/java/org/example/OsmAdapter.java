@@ -1,25 +1,11 @@
 package org.example;
 
-import OpenLRImpl.MapDatabaseImpl;
-import ProtoDecoder.proto.decoder.LineDecoder;
-import ProtoDecoder.proto.decoder.LocationReferencePointDecoder;
 import joynext.protobuf.OpenLR;
 import openlr.PhysicalFormatException;
-import openlr.binary.ByteArray;
-import openlr.binary.OpenLRBinaryDecoder;
-import openlr.binary.impl.LocationReferenceBinaryImpl;
-import openlr.decoder.OpenLRDecoder;
-import openlr.decoder.OpenLRDecoderParameter;
-import openlr.location.Location;
-import openlr.map.MapDatabase;
-import openlr.properties.OpenLRPropertiesReader;
-import openlr.rawLocRef.RawLocationReference;
-import org.apache.commons.configuration.FileConfiguration;
 
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
-import java.util.Base64;
 
 public class OsmAdapter {
 
@@ -39,7 +25,7 @@ public class OsmAdapter {
 
       input.close();*/
       // Create an OpenLR message
-      OpenLR.Builder openLRMessageBuilder = OpenLR.newBuilder();
+      /*OpenLR.Builder openLRMessageBuilder = OpenLR.newBuilder();
       // Create a LinearLocationReference
       OpenLR.LinearLocationReference.Builder linearLocationBuilder = OpenLR.LinearLocationReference.newBuilder();
 
@@ -96,14 +82,29 @@ public class OsmAdapter {
       System.out.println("rawLocationReference from protobuf:"+exampleRawLineLocRef);
       //System.out.println(openLRLocationReference);
 
+      RoutableOSMMapLoader mapLoader = new RoutableOSMMapLoader();
       // Initialize database
-      MapDatabase mapDatabase = new MapDatabaseImpl();
+      MapDatabase mapDatabase = new MapDatabaseImpl(mapLoader);
       FileConfiguration decoderConfig = OpenLRPropertiesReader.loadPropertiesFromFile(new File("src/resources/OpenLR-Decoder-Properties.xml"));
       OpenLRDecoderParameter params = new OpenLRDecoderParameter.Builder().with(mapDatabase).with(decoderConfig).buildParameter();
       //Initialize the decoder
       OpenLRDecoder decoder = new openlr.decoder.OpenLRDecoder();
       Location location = decoder.decodeRaw(params, exampleRawLineLocRef);
-      System.out.println("From decoder :"+location.getLocationLines());
+      System.out.println("From decoder :"+location.getLocationLines());/**/
+
+      // Read data from the binary file
+      FileInputStream input = new FileInputStream("/home/user/OsmAdapter/src/resources/joynext.pbf"); // Replace "data.pbf" with your actual file name
+      OpenLR openLRMessage = OpenLR.parseFrom(input);
+
+      // Now you can work with the parsed OpenLR message
+      // For example:
+      OpenLR.LinearLocationReference linearLocationReference = openLRMessage.getLinearLocationReference();
+      System.out.println("Longitude: " + linearLocationReference.getFirst().getAbsoluteCoordinate().getLongitude());
+      System.out.println("Latitude: " + linearLocationReference.getFirst().getAbsoluteCoordinate().getLatitude());
+
+      // Handle other fields as needed
+
+      input.close();
 
     } catch (Exception e) {
       e.printStackTrace();
