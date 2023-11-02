@@ -1,12 +1,13 @@
 package ProtoDecoder.proto.decoder;
 
-import openlr.LocationReferencePoint;
-import openlr.map.FormOfWay;
-import openlr.map.FunctionalRoadClass;
+import ProtoDecoder.impl.LocationReferencePointProtoImpl;
 import ProtoDecoder.proto.OpenLRProtoException;
 import ProtoDecoder.proto.OpenLRProtoStatusCode;
-import ProtoDecoder.impl.LocationReferencePointProtoImpl;
 import joynext.protobuf.SnapshotOuterClass.OpenLR;
+import openlr.LocationReferencePoint;
+import openlr.binary.OpenLRBinaryConstants;
+import openlr.map.FormOfWay;
+import openlr.map.FunctionalRoadClass;
 
 public class LocationReferencePointDecoder {
     LocationReferencePoint decode(OpenLR.LinearLocationReference.FirstLocationReferencePoint data, int sequenceNumber) throws OpenLRProtoException {
@@ -15,8 +16,8 @@ public class LocationReferencePointDecoder {
         }
 
         OpenLR.GeoCoordinate coordinates = data.getAbsoluteCoordinate();
-        double longitudeDeg = coordinates.getLongitude();
-        double latitudeDeg = coordinates.getLatitude();
+        double longitudeDeg = calculate32BitRepresentation(coordinates.getLongitude());
+        double latitudeDeg = calculate32BitRepresentation(coordinates.getLatitude());
 
         if (!data.hasLineProperties()) {
             throw new OpenLRProtoException(OpenLRProtoStatusCode.INVALID_LOCATION_REFERENCE);
@@ -43,14 +44,18 @@ public class LocationReferencePointDecoder {
                 fow,
                 distanceToNext,
                 lfrc);
-    }LocationReferencePoint decode(OpenLR.LinearLocationReference.IntermediateLocationReferencePoint data, int sequenceNumber) throws OpenLRProtoException {
+    }
+
+    LocationReferencePoint decode(OpenLR.LinearLocationReference.IntermediateLocationReferencePoint data, int sequenceNumber, double prevLon, double prevLat) throws OpenLRProtoException {
         if (!data.hasRelativeCoordinate()) {
             throw new OpenLRProtoException(OpenLRProtoStatusCode.INVALID_LOCATION_REFERENCE);
         }
 
         OpenLR.GeoCoordinate coordinates = data.getRelativeCoordinate();
-        double longitudeDeg = coordinates.getLongitude();
-        double latitudeDeg = coordinates.getLatitude();
+        double longitudeDeg = prevLon
+                + (calculate32BitRepresentation(coordinates.getLongitude()) / OpenLRBinaryConstants.DECA_MICRO_DEG_FACTOR);
+        double latitudeDeg = prevLat
+                + (calculate32BitRepresentation(coordinates.getLatitude())  / OpenLRBinaryConstants.DECA_MICRO_DEG_FACTOR);
 
         if (!data.hasLineProperties()) {
             throw new OpenLRProtoException(OpenLRProtoStatusCode.INVALID_LOCATION_REFERENCE);
@@ -78,14 +83,16 @@ public class LocationReferencePointDecoder {
                 distanceToNext,
                 lfrc);
     }
-    LocationReferencePoint decode(OpenLR.LinearLocationReference.LastLocationReferencePoint data, int sequenceNumber) throws OpenLRProtoException {
+    LocationReferencePoint decode(OpenLR.LinearLocationReference.LastLocationReferencePoint data, int sequenceNumber, double prevLon, double prevLat) throws OpenLRProtoException {
         if (!data.hasRelativeCoordinate()) {
             throw new OpenLRProtoException(OpenLRProtoStatusCode.INVALID_LOCATION_REFERENCE);
         }
 
         OpenLR.GeoCoordinate coordinates = data.getRelativeCoordinate();
-        double longitudeDeg = coordinates.getLongitude();
-        double latitudeDeg = coordinates.getLatitude();
+        double longitudeDeg = prevLon
+                + (calculate32BitRepresentation(coordinates.getLongitude()) / OpenLRBinaryConstants.DECA_MICRO_DEG_FACTOR);
+        double latitudeDeg = prevLat
+                + (calculate32BitRepresentation(coordinates.getLatitude())  / OpenLRBinaryConstants.DECA_MICRO_DEG_FACTOR);
 
         if (!data.hasLineProperties()) {
             throw new OpenLRProtoException(OpenLRProtoStatusCode.INVALID_LOCATION_REFERENCE);
@@ -150,5 +157,12 @@ public class LocationReferencePointDecoder {
             default:
                 throw new OpenLRProtoException(OpenLRProtoStatusCode.INVALID_LOCATION_REFERENCE);
         }
+    }
+    private double calculate32BitRepresentation(int val) {
+        int sgn = (int) Math.signum(val);
+        double retVal = (val - (sgn * OpenLRBinaryConstants.ROUND_FACTOR))
+                * OpenLRBinaryConstants.BIT24FACTOR_REVERSED;
+        return retVal;
+
     }
 }

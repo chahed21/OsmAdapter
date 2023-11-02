@@ -1,0 +1,10 @@
+//base64 openlr binary string  to decode
+      String openlr = "CCkBEAAlJAnGhyRP3wAJBQQBA58ACgUEAYFeAP+P/3MACQUEAQPfADAAAA==";
+
+//Initialize the binary decoder and decode the binary string
+      OpenLRBinaryDecoder binaryDecoder = new OpenLRBinaryDecoder();
+      ByteArray byteArray = new ByteArray(Base64.getDecoder().decode(openlr));
+      LocationReferenceBinaryImpl locationReferenceBinary = new LocationReferenceBinaryImpl("Test location", byteArray);
+      RawLocationReference rawLocationReference = binaryDecoder.decodeData(locationReferenceBinary);
+      Location location_binary = decoder.decodeRaw(params, rawLocationReference);
+      System.out.println("From binary decoder"+location_binary);

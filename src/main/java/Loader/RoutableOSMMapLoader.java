@@ -9,22 +9,19 @@ import OpenLRImpl.MapDatabaseImpl;
 import OpenLRImpl.NodeImpl;
 import org.apache.commons.collections.ListUtils;
 import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.SQLDialect;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
+import org.locationtech.jts.geom.Point;
+
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.jooq.sources.tables.Kanten.KANTEN;
 import static org.jooq.sources.tables.Knoten.KNOTEN;
@@ -155,7 +152,7 @@ public class RoutableOSMMapLoader implements MapLoader {
 
         // Get all lines from database
         List<DirectLine> directLines = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
-                KANTEN.LENGTH_METER, KANTEN.NAME)
+                        KANTEN.LENGTH_METER, KANTEN.NAME)
                 .from(KANTEN)
                 .fetchInto(DirectLine.class);
 
@@ -164,7 +161,7 @@ public class RoutableOSMMapLoader implements MapLoader {
         // get all lines from database where oneway=false as reversed line > start and end node are switched and line
         // geometry is reversed.
         List<ReversedLine> reversedLines = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
-                KANTEN.LENGTH_METER, KANTEN.NAME)
+                        KANTEN.LENGTH_METER, KANTEN.NAME)
                 .from(KANTEN)
                 .where(KANTEN.ONEWAY.eq(false))
                 .fetchInto(ReversedLine.class);
@@ -222,7 +219,7 @@ public class RoutableOSMMapLoader implements MapLoader {
             String wktString;
             wktString = ctx.select(st_asText(l.isReversed())).from(KANTEN).where(KANTEN.LINE_ID.eq(l.getID())).fetchOne().value1().toString();
             try {
-                 l.setLineGeometry((LineString) reader.read(wktString));
+                l.setLineGeometry((LineString) reader.read(wktString));
             } catch (ParseException e) {
                 e.printStackTrace();
             }

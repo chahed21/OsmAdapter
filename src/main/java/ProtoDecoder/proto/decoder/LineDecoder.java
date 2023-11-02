@@ -35,14 +35,17 @@ public class LineDecoder implements LocationReferenceDecoder {
         int sequenceNumber=1;
         LocationReferencePoint firstLocationReferencePoint = locationReferencePointDecoder.decode(lineLocationReference.getFirst(),sequenceNumber);
         locationReferencePoints.add(firstLocationReferencePoint);
-
+        double prevLon = firstLocationReferencePoint.getLongitudeDeg();
+        double prevLat = firstLocationReferencePoint.getLatitudeDeg();
         for (LinearLocationReference.IntermediateLocationReferencePoint intermediatePoint : lineLocationReference.getIntermediatesList()) {
             ++sequenceNumber;
-            LocationReferencePoint intermediateLocationReferencePoint = locationReferencePointDecoder.decode(intermediatePoint,sequenceNumber);
+            LocationReferencePoint intermediateLocationReferencePoint = locationReferencePointDecoder.decode(intermediatePoint,sequenceNumber,prevLon,prevLat);
             locationReferencePoints.add(intermediateLocationReferencePoint);
+            prevLon = intermediateLocationReferencePoint.getLongitudeDeg();
+            prevLat = intermediateLocationReferencePoint.getLatitudeDeg();
         }
 
-        LocationReferencePoint lastLocationReferencePoint = locationReferencePointDecoder.decode(lineLocationReference.getLast(),sequenceNumber);
+        LocationReferencePoint lastLocationReferencePoint = locationReferencePointDecoder.decode(lineLocationReference.getLast(),sequenceNumber,prevLon,prevLat);
         ++sequenceNumber;
         locationReferencePoints.add(lastLocationReferencePoint);
 
