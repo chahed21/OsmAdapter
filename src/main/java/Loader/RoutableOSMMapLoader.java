@@ -19,9 +19,13 @@ import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -43,7 +47,8 @@ import static org.jooq.sources.tables.Metadata.METADATA;
  */
 
 public class RoutableOSMMapLoader implements MapLoader {
-
+    private static final Logger logger =
+            LoggerFactory.getLogger(RoutableOSMMapLoader.class);
     private final DSLContext ctx;
     private final Connection con;
     private final List<NodeImpl> allNodesList;
@@ -99,9 +104,11 @@ public class RoutableOSMMapLoader implements MapLoader {
     @Override
     public List<NodeImpl> getAllNodes() {
 
-        // Get node information from PostgreSQL database and write it into NodeImpl class using JOOQ
+        // Get node information from PostgreSQL database and write it into NodeImpl
+        // class using JOOQ
         List<NodeImpl> allNodes = ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
-                .from(KNOTEN).fetchInto(NodeImpl.class);
+                .from(KNOTEN)
+                .fetchInto(NodeImpl.class);
 
         // set node geometry for each node in list.
         setNodeGeometry(allNodes);
@@ -112,24 +119,27 @@ public class RoutableOSMMapLoader implements MapLoader {
     }
 
     /**
-     * Sets list of connected line IDs for each node in the allNodesList by using SQL query.
+     * Sets list of connected line IDs for each node in the allNodesList by using
+     * SQL query.
      * @param allNodesList list containing all nodes in the road network
      */
     private void setConnectedLinesList(List<NodeImpl> allNodesList) {
 
         allNodesList.forEach(n -> {
-            List<Long> connectedLinesIDs = ctx.select().from(KANTEN)
+            List<Long> connectedLinesIDs = ctx.select()
+                    .from(KANTEN)
                     .where(KANTEN.START_NODE.eq(n.getID()))
                     .or(KANTEN.END_NODE.eq(n.getID()))
-                    .fetch().getValues(KANTEN.LINE_ID);
+                    .fetch()
+                    .getValues(KANTEN.LINE_ID);
 
             n.setConnectedLinesIDs(connectedLinesIDs);
         });
-
     }
 
-    /** Creates node geometry for each node in the allNodesList. Longitude and latitude information (WGS84)
-     * are used to create point geometry.
+    /**
+     * Creates node geometry for each node in the allNodesList. Longitude and
+     * latitude information (WGS84) are used to create point geometry.
      *
      * @param allNodesList list containing all nodes in the road network
      */
@@ -139,7 +149,8 @@ public class RoutableOSMMapLoader implements MapLoader {
         GeometryFactory factory = new GeometryFactory();
         allNodesList.forEach(node -> {
             // Create point geometry for each node
-            Point point = factory.createPoint(new Coordinate(node.getLon(), node.getLat()));
+            Point point =
+                    factory.createPoint(new Coordinate(node.getLon(), node.getLat()));
             // Set point geometry for the node
             node.setPointGeometry(point);
             // set MapDatabase for the node
@@ -147,33 +158,43 @@ public class RoutableOSMMapLoader implements MapLoader {
         });
     }
 
-
     public List<LineImpl> getAllLines() {
 
         List<LineImpl> linesDirect = new ArrayList<>();
         List<LineImpl> linesReversed = new ArrayList<>();
 
         // Get all lines from database
-        List<DirectLine> directLines = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
-                KANTEN.LENGTH_METER, KANTEN.NAME)
-                .from(KANTEN)
-                .fetchInto(DirectLine.class);
+        List<DirectLine> directLines =
+                ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE,
+                                KANTEN.FRC, KANTEN.FOW, KANTEN.LENGTH_METER, KANTEN.NAME)
+                        .from(KANTEN)
+                        .fetchInto(DirectLine.class);
 
-        directLines.forEach(directLine -> linesDirect.add(LineConverter.directLineToOpenLRLine(directLine)));
+        directLines.forEach(
+                directLine
+                        -> linesDirect.add(LineConverter.directLineToOpenLRLine(directLine)));
 
-        // get all lines from database where oneway=false as reversed line > start and end node are switched and line
-        // geometry is reversed.
-        List<ReversedLine> reversedLines = ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE, KANTEN.FRC, KANTEN.FOW,
-                KANTEN.LENGTH_METER, KANTEN.NAME)
-                .from(KANTEN)
-                .where(KANTEN.ONEWAY.eq(false))
-                .fetchInto(ReversedLine.class);
+        // get all lines from database where oneway=false as reversed line > start
+        // and end node are switched and line geometry is reversed.
+        List<ReversedLine> reversedLines =
+                ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE,
+                                KANTEN.FRC, KANTEN.FOW, KANTEN.LENGTH_METER, KANTEN.NAME)
+                        .from(KANTEN)
+                        .where(KANTEN.ONEWAY.eq(false))
+                        .fetchInto(ReversedLine.class);
 
-        reversedLines.forEach(reversedLine -> linesReversed.add(LineConverter.reversedLineToOpenLRLine(reversedLine)));
+        reversedLines.forEach(
+                reversedLine
+                        -> linesReversed.add(
+                        LineConverter.reversedLineToOpenLRLine(reversedLine)));
 
         List allLines = ListUtils.union(linesDirect, linesReversed);
-
+        Instant StartLineNode = Instant.now();
         setLineNodes(allLines);
+        Instant EndLineNode = Instant.now();
+        Duration PeriodLineNode = Duration.between(StartLineNode, EndLineNode);
+        logger.info("Load all the directLines after transformations. Duration: " +
+                PeriodLineNode);
         setLineGeometry(allLines);
 
         return allLines;
@@ -185,24 +206,27 @@ public class RoutableOSMMapLoader implements MapLoader {
      */
     private void setLineNodes(List<LineImpl> linesList) {
         linesList.forEach(l -> {
-
             long startNodeID = l.getStartNodeID();
-            Optional<NodeImpl> startNode = allNodesList.stream().filter(n -> n.getID() == startNodeID).findFirst();
+            Optional<NodeImpl> startNode = allNodesList.stream()
+                    .filter(n -> n.getID() == startNodeID)
+                    .findFirst();
             startNode.ifPresent(l::setStartNode);
 
             long endNodeID = l.getEndNodeID();
-            Optional<NodeImpl> endNode = allNodesList.stream().filter(n -> n.getID() == endNodeID).findFirst();
+            Optional<NodeImpl> endNode =
+                    allNodesList.stream().filter(n -> n.getID() == endNodeID).findFirst();
             endNode.ifPresent(l::setEndNode);
         });
     }
 
     /**
-     * Method needed for JOOQ to get line geometry as WKT from Postgres DB using PostGIS function ST_AsText
+     * Method needed for JOOQ to get line geometry as WKT from Postgres DB using
+     * PostGIS function ST_AsText
      * @param isReversed boolean value if line geometry needs to be reversed.
      * @return JOOQ field
      */
     private static Field<?> st_asText(boolean isReversed) {
-        if(!isReversed)
+        if (!isReversed)
             return DSL.field("ST_AsText(geom)");
         else {
             return DSL.field("ST_AsText(ST_Reverse(geom))");
@@ -216,13 +240,18 @@ public class RoutableOSMMapLoader implements MapLoader {
     private void setLineGeometry(List<LineImpl> linesList) {
 
         GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
-        WKTReader reader = new WKTReader( geometryFactory );
+        WKTReader reader = new WKTReader(geometryFactory);
 
         linesList.forEach(l -> {
             String wktString;
-            wktString = ctx.select(st_asText(l.isReversed())).from(KANTEN).where(KANTEN.LINE_ID.eq(l.getID())).fetchOne().value1().toString();
+            wktString = ctx.select(st_asText(l.isReversed()))
+                    .from(KANTEN)
+                    .where(KANTEN.LINE_ID.eq(l.getID()))
+                    .fetchOne()
+                    .value1()
+                    .toString();
             try {
-                 l.setLineGeometry((LineString) reader.read(wktString));
+                l.setLineGeometry((LineString)reader.read(wktString));
             } catch (ParseException e) {
                 e.printStackTrace();
             }
@@ -233,8 +262,10 @@ public class RoutableOSMMapLoader implements MapLoader {
 
         double x = ctx.select(METADATA.LEFT_LAT).from(METADATA).fetchOne().value1();
         double y = ctx.select(METADATA.LEFT_LON).from(METADATA).fetchOne().value1();
-        double width = ctx.select(METADATA.BBOX_WIDTH).from(METADATA).fetchOne().value1();
-        double height = ctx.select(METADATA.BBOX_HEIGHT).from(METADATA).fetchOne().value1();
+        double width =
+                ctx.select(METADATA.BBOX_WIDTH).from(METADATA).fetchOne().value1();
+        double height =
+                ctx.select(METADATA.BBOX_HEIGHT).from(METADATA).fetchOne().value1();
 
         ArrayList<Double> bboxInformation = new ArrayList<>();
         bboxInformation.add(x);
@@ -250,7 +281,9 @@ public class RoutableOSMMapLoader implements MapLoader {
      * @throws Exception Exception
      */
     public void close() throws Exception {
-        if (ctx != null) ctx.close();
-        if (con != null) con.close();
+        if (ctx != null)
+            ctx.close();
+        if (con != null)
+            con.close();
     }
 }
