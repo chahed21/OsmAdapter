@@ -7,7 +7,14 @@ import OpenLRImpl.NodeImpl;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Loader interface provides methods needed to get road network and use it for the OpenLR decoding process.
+ *
+ * @author  Emily Kast
+ */
+
 public interface MapLoader {
+
     /**
      * Method to get all nodes from the database and write the into AllNodesList.
      * For each node the following information must be given:

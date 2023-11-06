@@ -1,6 +1,6 @@
 package OpenLRImpl;
 
-import GeometryFunctions.*;
+import GeometryFunctions.GeometryFunctions;
 import Loader.MapLoader;
 import openlr.map.Line;
 import openlr.map.MapDatabase;
@@ -42,9 +42,9 @@ public class MapDatabaseImpl implements MapDatabase {
     @Override
     public Line getLine(long id) {
 
-         Optional<LineImpl> matchingLine = osmLoader.getAllLinesList().stream()
-                 .filter(l -> l.getID() == id).findFirst();
-         return matchingLine.get();
+        Optional<LineImpl> matchingLine = osmLoader.getAllLinesList().stream()
+                .filter(l -> l.getID() == id).findFirst();
+        return matchingLine.get();
 
     }
 
@@ -52,7 +52,7 @@ public class MapDatabaseImpl implements MapDatabase {
     public Node getNode(long id) {
 
         Optional<NodeImpl> matchingNode = osmLoader.getAllNodesList().stream()
-            .filter(n -> n.getID() == id).findFirst();
+                .filter(n -> n.getID() == id).findFirst();
 
         return matchingNode.get();
     }
@@ -109,7 +109,7 @@ public class MapDatabaseImpl implements MapDatabase {
 
     @Override
     public int getNumberOfNodes() {
-       return osmLoader.numberOfNodes();
+        return osmLoader.numberOfNodes();
     }
 
     @Override
