@@ -90,9 +90,9 @@ public class LocationReferencePointDecoder {
 
         OpenLR.GeoCoordinate coordinates = data.getRelativeCoordinate();
         double longitudeDeg = prevLon
-                + (calculate32BitRepresentation(coordinates.getLongitude()) / OpenLRBinaryConstants.DECA_MICRO_DEG_FACTOR);
+                + coordinates.getLongitude() / OpenLRBinaryConstants.DECA_MICRO_DEG_FACTOR;
         double latitudeDeg = prevLat
-                + (calculate32BitRepresentation(coordinates.getLatitude())  / OpenLRBinaryConstants.DECA_MICRO_DEG_FACTOR);
+                + coordinates.getLatitude()  / OpenLRBinaryConstants.DECA_MICRO_DEG_FACTOR;
 
         if (!data.hasLineProperties()) {
             throw new OpenLRProtoException(OpenLRProtoStatusCode.INVALID_LOCATION_REFERENCE);

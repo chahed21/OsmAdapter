@@ -44,9 +44,8 @@ public class LineDecoder implements LocationReferenceDecoder {
             prevLon = intermediateLocationReferencePoint.getLongitudeDeg();
             prevLat = intermediateLocationReferencePoint.getLatitudeDeg();
         }
-
-        LocationReferencePoint lastLocationReferencePoint = locationReferencePointDecoder.decode(lineLocationReference.getLast(),sequenceNumber,prevLon,prevLat);
         ++sequenceNumber;
+        LocationReferencePoint lastLocationReferencePoint = locationReferencePointDecoder.decode(lineLocationReference.getLast(),sequenceNumber,prevLon,prevLat);
         locationReferencePoints.add(lastLocationReferencePoint);
 
         Offsets offsets = new OffsetsProtoImpl(

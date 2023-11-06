@@ -136,6 +136,7 @@ public class OsmAdapter {
       OpenLRDecoder decoder = new openlr.decoder.OpenLRDecoder();
       Location location = decoder.decodeRaw(params, exampleRawLineLocRef);
       System.out.println("From protobuf decoder :"+location.toString());
+      System.out.println("message ID : "+id);
       //base64 openlr binary string  to decode
       String openlr = "CCkBEAAlJAnGhyRP3wAJBQQBA58ACgUEAYFeAP+P/3MACQUEAQPfADAAAA==";
 
