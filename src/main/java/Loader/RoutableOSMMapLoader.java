@@ -103,27 +103,11 @@ public class RoutableOSMMapLoader implements MapLoader {
         // set node geometry for each node in list.
         setNodeGeometry(allNodes);
         // set list of connected lines for each node in list.
-        setConnectedLinesList(allNodes);
 
         return allNodes;
     }
 
-    /**
-     * Sets list of connected line IDs for each node in the allNodesList by using SQL query.
-     * @param allNodesList list containing all nodes in the road network
-     */
-    private void setConnectedLinesList(List<NodeImpl> allNodesList) {
 
-        allNodesList.forEach(n -> {
-            List<Long> connectedLinesIDs = ctx.select().from(KANTEN)
-                    .where(KANTEN.START_NODE.eq(n.getID()))
-                    .or(KANTEN.END_NODE.eq(n.getID()))
-                    .fetch().getValues(KANTEN.LINE_ID);
-
-            n.setConnectedLinesIDs(connectedLinesIDs);
-        });
-
-    }
 
     /** Creates node geometry for each node in the allNodesList. Longitude and latitude information (WGS84)
      * are used to create point geometry.

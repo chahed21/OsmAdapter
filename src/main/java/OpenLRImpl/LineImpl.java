@@ -10,6 +10,8 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.util.*;
 
+import static org.jooq.sources.Tables.KANTEN;
+
 /**
  * Implementation of the TomTom OpenLR Line interface.
  *
@@ -156,27 +158,37 @@ public class LineImpl implements Line {
 
   @Override
   public Iterator<Line> getPrevLines() {
-
-    List<Line> previousLines = new ArrayList<>();
-    Iterator<Line> allLines = mdb.getAllLines();
-    while (allLines.hasNext()) {
-      Line line = allLines.next();
-      if (line.getEndNode().getID() == startNode_id)
-        previousLines.add(line);
-    }
+      List<Line> previousLines =
+              MapDatabaseImpl.ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE,
+                              KANTEN.FRC, KANTEN.FOW, KANTEN.LENGTH_METER, KANTEN.NAME,
+                              KANTEN.ONEWAY)
+                      .from(KANTEN).where(KANTEN.END_NODE.eq(startNode_id))
+                      .or(KANTEN.END_NODE.eq(getID()))
+                      .fetch()
+                      .map(record -> {
+                        LineImpl line = record.into(LineImpl.class);
+                        MapDatabaseImpl.setLineGeometry(line);
+                        line.setMdb(mdb);
+                        return line;
+                      });
     return previousLines.iterator();
   }
 
   @Override
   public Iterator<Line> getNextLines() {
-
-    List<Line> nextLines = new ArrayList<>();
-    Iterator<Line> allLines = mdb.getAllLines();
-    while (allLines.hasNext()) {
-      Line line = allLines.next();
-      if (line.getStartNode().getID() == endNode_id)
-        nextLines.add(line);
-    }
+    List<Line> nextLines =
+            MapDatabaseImpl.ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE,
+                            KANTEN.FRC, KANTEN.FOW, KANTEN.LENGTH_METER, KANTEN.NAME,
+                            KANTEN.ONEWAY)
+                    .from(KANTEN).where(KANTEN.START_NODE.eq(endNode_id))
+                    .or(KANTEN.END_NODE.eq(getID()))
+                    .fetch()
+                    .map(record -> {
+                      LineImpl line = record.into(LineImpl.class);
+                      MapDatabaseImpl.setLineGeometry(line);
+                      line.setMdb(mdb);
+                      return line;
+                    });
     return nextLines.iterator();
   }
 

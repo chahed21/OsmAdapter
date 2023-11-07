@@ -20,7 +20,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
-import java.sql.Time;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Scanner;
 
 public class OsmAdapter {
@@ -49,17 +50,17 @@ public class OsmAdapter {
       System.out.println("rawLocationReference from protobuf:"+exampleRawLineLocRef);
       // Initialize database
       MapDatabase mapDatabase = new MapDatabaseImpl();
-      long start = System.currentTimeMillis();
+      Instant start = Instant.now();
       FileConfiguration decoderConfig = OpenLRPropertiesReader.loadPropertiesFromFile(new File("src/resources/OpenLR-Decoder-Properties.xml"));
       OpenLRDecoderParameter params = new OpenLRDecoderParameter.Builder().with(mapDatabase).with(decoderConfig).buildParameter();
       //Initialize the decoderL
       OpenLRDecoder decoder = new openlr.decoder.OpenLRDecoder();
       Location location = decoder.decodeRaw(params, exampleRawLineLocRef);
+      Instant end = Instant.now();
+      long duration = Duration.between(start, end).toMillis();
+      logger.info("Decoding ended. Duration: " + duration+" ms ");
       System.out.println("From protobuf decoder :"+location.toString());
       System.out.println("message ID : "+id);
-      long end = System.currentTimeMillis();
-      Time duration = new Time(end - start - 3_600_000);
-      logger.info("Program ended. Duration: " + duration);
       ((MapDatabaseImpl) mapDatabase).close();
 
     } catch (Exception e) {

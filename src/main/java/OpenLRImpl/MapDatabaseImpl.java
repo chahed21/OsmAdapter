@@ -72,7 +72,7 @@ public class MapDatabaseImpl implements MapDatabase {
 
   /**
    * Sets line geometry for each line in the list using WKT representation.
-   * @param linesList list containing all lines in the road network
+
    */
 
   public static void setLineGeometry(LineImpl line) {
@@ -117,17 +117,6 @@ public class MapDatabaseImpl implements MapDatabase {
   public boolean hasTurnRestrictionOnPath(List<? extends Line> path) {
     return false;
   }
-  private void setConnectedLinesList(NodeImpl node) {
-    List<Long> connectedLinesIDs =
-        ctx.select()
-            .from(KANTEN)
-            .where(KANTEN.START_NODE.eq(node.getID()))
-            .or(KANTEN.END_NODE.eq(node.getID()))
-            .fetch()
-            .getValues(KANTEN.LINE_ID);
-
-    node.setConnectedLinesIDs(connectedLinesIDs);
-  }
   @Override
   public Iterator<Line>
   findLinesCloseByCoordinate(double longitude, double latitude, int distance) {
@@ -169,7 +158,6 @@ public class MapDatabaseImpl implements MapDatabase {
             .map(record -> {
               NodeImpl node = record.into(NodeImpl.class);
               setNodeGeometry(node); // Apply the transformation function
-              setConnectedLinesList(node);
               node.setMdb(
                   this); // Apply another transformation function if needed
               return node;
@@ -204,8 +192,6 @@ public class MapDatabaseImpl implements MapDatabase {
             .map(record -> {
               NodeImpl node = record.into(NodeImpl.class);
               setNodeGeometry(node); // Apply the transformation function
-              setConnectedLinesList(
-                  node); // Apply another transformation function if needed
               return node;
             });
     return allNodes.iterator();

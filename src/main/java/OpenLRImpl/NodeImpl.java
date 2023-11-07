@@ -21,10 +21,8 @@ public class NodeImpl implements Node {
     double lat;
     double lon;
     Point pointGeometry;
-    List<Long> connectedLinesIDs;
     MapDatabaseImpl mdb;
 
-    List<Line> connectedLines;
 
     public NodeImpl(long node_id, double lat, double lon) {
         this.node_id = node_id;
@@ -37,9 +35,6 @@ public class NodeImpl implements Node {
         this.pointGeometry = pointGeometry;
     }
 
-    public void setConnectedLinesIDs(List<Long> connectedLinesIDs) {
-        this.connectedLinesIDs = connectedLinesIDs;
-    }
 
     public void setMdb(MapDatabaseImpl mdb) {
         this.mdb = mdb;
@@ -86,9 +81,6 @@ public class NodeImpl implements Node {
 
     @Override
     public Iterator<Line> getConnectedLines() {
-        if (connectedLines != null) {
-            return connectedLines.iterator();
-        }
         List<Line> getConnectedLines =
                 MapDatabaseImpl.ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE,
                                 KANTEN.FRC, KANTEN.FOW, KANTEN.LENGTH_METER, KANTEN.NAME,
@@ -102,8 +94,7 @@ public class NodeImpl implements Node {
                             line.setMdb(mdb);
                             return line;
                         });
-        connectedLines = getConnectedLines;
-        return connectedLines.iterator();
+        return getConnectedLines.iterator();
     }
 
     @Override
