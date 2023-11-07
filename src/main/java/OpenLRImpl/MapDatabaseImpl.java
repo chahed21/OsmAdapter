@@ -17,6 +17,7 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
 
+import GeometryFunctions.GeometryFunctions;
 import java.awt.geom.Rectangle2D;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -37,8 +38,8 @@ import static org.jooq.sources.tables.Knoten.KNOTEN;
 
 public class MapDatabaseImpl implements MapDatabase {
   GeometryFactory geometryFactory = new GeometryFactory();
-  private DSLContext ctx;
-  private Connection con;
+  public static DSLContext ctx;
+  public static Connection con;
 
   public MapDatabaseImpl() {
     try {
@@ -74,7 +75,7 @@ public class MapDatabaseImpl implements MapDatabase {
    * @param linesList list containing all lines in the road network
    */
 
-  private void setLineGeometry(LineImpl line) {
+  public static void setLineGeometry(LineImpl line) {
 
     GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
     WKTReader reader = new WKTReader(geometryFactory);
@@ -108,7 +109,6 @@ public class MapDatabaseImpl implements MapDatabase {
         .map(record -> {
           NodeImpl node = record.into(NodeImpl.class);
           setNodeGeometry(node); // Apply the transformation function
-          setConnectedLinesList(node);
           node.setMdb(this); // Apply another transformation function if needed
           return node;
         });
@@ -131,11 +131,11 @@ public class MapDatabaseImpl implements MapDatabase {
   @Override
   public Iterator<Line>
   findLinesCloseByCoordinate(double longitude, double latitude, int distance) {
-    // double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
+    double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
     Condition condition = DSL.condition(
         "ST_DWithin({0}::geometry, ST_SetSRID(ST_MakePoint({1}, {2}), 4326), {3})",
         DSL.field(name("geom")), DSL.val(longitude), DSL.val(latitude),
-        DSL.val(distance));
+        DSL.val(distanceDeg));
     List<Line> closeByLines =
         ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE,
                    KANTEN.FRC, KANTEN.FOW, KANTEN.LENGTH_METER, KANTEN.NAME,
@@ -156,11 +156,11 @@ public class MapDatabaseImpl implements MapDatabase {
   @Override
   public Iterator<Node>
   findNodesCloseByCoordinate(double longitude, double latitude, int distance) {
-    // double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
+    double distanceDeg = GeometryFunctions.distToDeg(latitude, distance);
     Condition condition = DSL.condition(
         "ST_DWithin({0}::geometry, ST_SetSRID(ST_MakePoint({1}, {2}), 4326), {3})",
         DSL.field(name("geom")), DSL.val(longitude), DSL.val(latitude),
-        DSL.val(distance));
+        DSL.val(distanceDeg));
     List<Node> closeByNodes =
         ctx.select(KNOTEN.NODE_ID, KNOTEN.LAT, KNOTEN.LON)
             .from(KNOTEN)

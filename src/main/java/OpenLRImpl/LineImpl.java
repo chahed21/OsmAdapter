@@ -1,13 +1,14 @@
 package OpenLRImpl;
 
 import GeometryFunctions.GeometryFunctions;
-import java.awt.geom.Path2D;
-import java.awt.geom.Point2D;
-import java.util.*;
 import openlr.map.*;
 import org.geotools.referencing.GeodeticCalculator;
 import org.locationtech.jts.geom.*;
 import org.locationtech.jts.operation.distance.DistanceOp;
+
+import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
+import java.util.*;
 
 /**
  * Implementation of the TomTom OpenLR Line interface.
@@ -123,8 +124,8 @@ public class LineImpl implements Line {
         }
       }
     }
-    return new Point2D.Double(endNode.getLongitudeDeg(),
-                              endNode.getLatitudeDeg());
+    return new Point2D.Double(getEndNode().getLongitudeDeg(),
+            getEndNode().getLatitudeDeg());
   }
 
   @Override
