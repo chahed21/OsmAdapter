@@ -3,11 +3,11 @@ package OpenLRImpl;
 import openlr.map.*;
 import org.locationtech.jts.geom.Point;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
+import static org.jooq.sources.Tables.KANTEN;
 
 /**
  * Implementation of the TomTom OpenLR Node interface.
@@ -21,10 +21,8 @@ public class NodeImpl implements Node {
     double lat;
     double lon;
     Point pointGeometry;
-    List<Long> connectedLinesIDs;
     MapDatabaseImpl mdb;
 
-    List<Line> connectedLines;
 
     public NodeImpl(long node_id, double lat, double lon) {
         this.node_id = node_id;
@@ -37,9 +35,6 @@ public class NodeImpl implements Node {
         this.pointGeometry = pointGeometry;
     }
 
-    public void setConnectedLinesIDs(List<Long> connectedLinesIDs) {
-        this.connectedLinesIDs = connectedLinesIDs;
-    }
 
     public void setMdb(MapDatabaseImpl mdb) {
         this.mdb = mdb;
@@ -83,56 +78,66 @@ public class NodeImpl implements Node {
         return coordinates;
     }
 
+
     @Override
     public Iterator<Line> getConnectedLines() {
-
-        if (connectedLines != null) {
-            return connectedLines.iterator();
-        }
-
-        Iterator<Line> lineIterator = mdb.getAllLines();
-        List<Line> getConnectedLines = new ArrayList<>();
-        connectedLinesIDs.forEach(id -> {
-            while(lineIterator.hasNext()) {
-                Line l = lineIterator.next();
-                if(id == l.getID())
-                    getConnectedLines.add(l);
-            }
-        });
-         connectedLines = getConnectedLines;
-         return connectedLines.iterator();
+        List<Line> getConnectedLines =
+                MapDatabaseImpl.ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE,
+                                KANTEN.FRC, KANTEN.FOW, KANTEN.LENGTH_METER, KANTEN.NAME,
+                                KANTEN.ONEWAY)
+                        .from(KANTEN).where(KANTEN.START_NODE.eq(getID()))
+                        .or(KANTEN.END_NODE.eq(getID()))
+                        .fetch()
+                        .map(record -> {
+                            LineImpl line = record.into(LineImpl.class);
+                            MapDatabaseImpl.setLineGeometry(line);
+                            line.setMdb(mdb);
+                            return line;
+                        });
+        return getConnectedLines.iterator();
     }
 
     @Override
     public int getNumberConnectedLines() {
-        if (connectedLines != null){
-            return connectedLines.size();
-        }
-        getConnectedLines();
-        return  connectedLines.size();
+        return MapDatabaseImpl.ctx
+                .selectCount()
+                .from(KANTEN)
+                .where(KANTEN.START_NODE.eq(getID()))
+                .or(KANTEN.END_NODE.eq(getID()))
+                .fetchOne(0, int.class);
     }
 
     @Override
     public Iterator<Line> getOutgoingLines() {
-        if(connectedLines != null)
-            getConnectedLines();
-
-        assert connectedLines != null;
-        List<Line> outgoingLines = connectedLines.stream()
-                .filter(l -> l.getStartNode().getID() == node_id)
-                .collect(Collectors.toList());
+        List<Line> outgoingLines =
+                MapDatabaseImpl.ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE,
+                                KANTEN.FRC, KANTEN.FOW, KANTEN.LENGTH_METER, KANTEN.NAME,
+                                KANTEN.ONEWAY)
+                        .from(KANTEN).where(KANTEN.START_NODE.eq(getID()))
+                        .fetch()
+                        .map(record -> {
+                            LineImpl line = record.into(LineImpl.class);
+                            MapDatabaseImpl.setLineGeometry(line);
+                            line.setMdb(mdb);
+                            return line;
+                        });
         return outgoingLines.iterator();
     }
 
     @Override
     public Iterator<Line> getIncomingLines() {
-        if(connectedLines != null)
-            getConnectedLines();
-
-        assert connectedLines != null;
-        List<Line> incomingLines = connectedLines.stream()
-                .filter(l -> l.getEndNode().getID() == node_id)
-                .collect(Collectors.toList());
+        List<Line> incomingLines =
+                MapDatabaseImpl.ctx.select(KANTEN.LINE_ID, KANTEN.START_NODE, KANTEN.END_NODE,
+                                KANTEN.FRC, KANTEN.FOW, KANTEN.LENGTH_METER, KANTEN.NAME,
+                                KANTEN.ONEWAY)
+                        .from(KANTEN).where(KANTEN.END_NODE.eq(getID()))
+                        .fetch()
+                        .map(record -> {
+                            LineImpl line = record.into(LineImpl.class);
+                            MapDatabaseImpl.setLineGeometry(line);
+                            line.setMdb(mdb);
+                            return line;
+                        });
         return incomingLines.iterator();
     }
 
