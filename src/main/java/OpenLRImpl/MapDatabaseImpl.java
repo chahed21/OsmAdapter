@@ -1,6 +1,7 @@
 package OpenLRImpl;
 
 import DataBase.DatasourceConfig;
+import GeometryFunctions.GeometryFunctions;
 import openlr.map.Line;
 import openlr.map.MapDatabase;
 import openlr.map.Node;
@@ -17,7 +18,6 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKTReader;
 
-import GeometryFunctions.GeometryFunctions;
 import java.awt.geom.Rectangle2D;
 import java.sql.Connection;
 import java.sql.SQLException;

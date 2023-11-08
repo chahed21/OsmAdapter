@@ -28,7 +28,6 @@ public class OsmAdapter {
   private static final Logger logger = LoggerFactory.getLogger(OsmAdapter.class);
   public static void main(String[] args) throws SQLException, PhysicalFormatException, FileNotFoundException {
     try {
-
       // Read data from the binary file
       BasicConfigurator.configure();
       Scanner sc= new Scanner(System.in);    //System.in is a standard input stream
@@ -62,7 +61,7 @@ public class OsmAdapter {
       System.out.println("From protobuf decoder :"+location.toString());
       System.out.println("message ID : "+id);
       ((MapDatabaseImpl) mapDatabase).close();
-
+      
     } catch (Exception e) {
       e.printStackTrace();
     }
